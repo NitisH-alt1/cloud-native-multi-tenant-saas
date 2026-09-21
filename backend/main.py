@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
-from database.connection import engine, Base
-from database import models
+from backend.database.connection import engine, Base
+from backend.database import models
 
 from tenant.routes import router as tenant_router
 from project.routes import router as project_router
