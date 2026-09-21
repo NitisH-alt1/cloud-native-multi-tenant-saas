@@ -1,5 +1,4 @@
 from logging.config import fileConfig
-import os
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -10,26 +9,27 @@ from backend.database.connection import Base
 from backend.database import models
 
 
+# Alembic Config object
 config = context.config
 
 
+# Configure Python logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 
+# SQLAlchemy metadata for autogenerate
 target_metadata = Base.metadata
 
 
-database_url = os.getenv("DATABASE_URL")
-
-if database_url:
-    config.set_main_option(
-        "sqlalchemy.url",
-        database_url.replace("%", "%%")
-    )
-
-
 def run_migrations_offline() -> None:
+    """
+    Run migrations in 'offline' mode.
+
+    This configures the context with only a URL,
+    without creating an Engine.
+    """
+
     url = config.get_main_option("sqlalchemy.url")
 
     context.configure(
@@ -46,6 +46,12 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    """
+    Run migrations in 'online' mode.
+
+    This creates an Engine and connects to the database.
+    """
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
