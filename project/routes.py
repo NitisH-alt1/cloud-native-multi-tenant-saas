@@ -5,6 +5,7 @@ from backend.database.connection import get_db
 from backend.database.models import Project
 
 from auth.dependencies import get_current_user, require_role
+from project.schemas import ProjectCreate, ProjectUpdate
 
 
 router = APIRouter(
@@ -39,14 +40,13 @@ def get_projects(
 
 @router.post("/")
 def create_project(
-    name: str,
-    description: str = None,
+    project_data: ProjectCreate,
     db: Session = Depends(get_db),
     current_user=Depends(require_role("admin"))
 ):
     project = Project(
-        name=name,
-        description=description,
+        name=project_data.name,
+        description=project_data.description,
         tenant_id=current_user.tenant_id
     )
 
@@ -97,8 +97,7 @@ def get_project(
 @router.put("/{project_id}")
 def update_project(
     project_id: int,
-    name: str,
-    description: str = None,
+    project_data: ProjectUpdate,
     db: Session = Depends(get_db),
     current_user=Depends(require_role("admin"))
 ):
@@ -117,8 +116,8 @@ def update_project(
             detail="Project not found"
         )
 
-    project.name = name
-    project.description = description
+    project.name = project_data.name
+    project.description = project_data.description
 
     db.commit()
     db.refresh(project)
