@@ -40,12 +40,20 @@ def create_user(
     password_hash: str,
     tenant_id: int
 ):
+    existing_user_count = (
+        db.query(User)
+        .filter(User.tenant_id == tenant_id)
+        .count()
+    )
+
+    role = "admin" if existing_user_count == 0 else "user"
+
     user = User(
         username=username,
         email=email,
         password_hash=password_hash,
         tenant_id=tenant_id,
-        role="user"
+        role=role
     )
 
     db.add(user)
