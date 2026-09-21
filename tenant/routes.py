@@ -16,8 +16,7 @@ router = APIRouter(
 def create_tenant(
     name: str,
     slug: str,
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     existing_tenant = (
         db.query(Tenant)
@@ -41,34 +40,28 @@ def create_tenant(
     db.refresh(tenant)
 
     return {
-        "message": "Tenant created successfully",
-        "tenant": {
-            "id": tenant.id,
-            "name": tenant.name,
-            "slug": tenant.slug
-        }
-    }
-
-
-@router.get("/me")
-def get_current_tenant(
-    db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    tenant = (
-        db.query(Tenant)
-        .filter(Tenant.id == current_user.tenant_id)
-        .first()
-    )
-
-    if tenant is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Tenant not found"
-        )
-
-    return {
         "id": tenant.id,
         "name": tenant.name,
         "slug": tenant.slug
     }
+
+
+@router.get("/")
+def get_tenants(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    tenants = (
+        db.query(Tenant)
+        .filter(Tenant.id == current_user.tenant_id)
+        .all()
+    )
+
+    return [
+        {
+            "id": tenant.id,
+            "name": tenant.name,
+            "slug": tenant.slug
+        }
+        for tenant in tenants
+    ]
