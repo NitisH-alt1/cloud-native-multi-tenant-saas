@@ -6,7 +6,11 @@ from backend.database.connection import get_db
 from backend.database.models import Tenant
 
 from auth.security import hash_password
-from auth.service import get_user_by_username, get_user_by_email, create_user
+from auth.service import (
+    get_user_by_username,
+    get_user_by_email,
+    create_user
+)
 
 
 router = APIRouter(
@@ -28,16 +32,12 @@ def bootstrap_tenant(
     request: BootstrapRequest,
     db: Session = Depends(get_db)
 ):
-    existing_tenant = (
-        db.query(Tenant)
-        .filter(Tenant.slug == request.tenant_slug)
-        .first()
-    )
+    existing_tenant_count = db.query(Tenant).count()
 
-    if existing_tenant:
+    if existing_tenant_count > 0:
         raise HTTPException(
-            status_code=400,
-            detail="Tenant already exists"
+            status_code=403,
+            detail="Bootstrap is already completed"
         )
 
     tenant = Tenant(
