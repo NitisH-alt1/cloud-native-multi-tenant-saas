@@ -5,12 +5,17 @@ from backend.database.connection import get_db
 from backend.database.models import Tenant
 
 from auth.schemas import UserRegister, UserLogin, TokenResponse
-from auth.security import hash_password, verify_password, create_access_token
+from auth.security import (
+    hash_password,
+    verify_password,
+    create_access_token
+)
 from auth.service import (
     get_user_by_username,
     get_user_by_email,
     create_user
 )
+from auth.dependencies import get_current_user
 
 
 router = APIRouter(
@@ -74,7 +79,8 @@ def register_user(
         "message": "User registered successfully",
         "user_id": new_user.id,
         "username": new_user.username,
-        "tenant_id": new_user.tenant_id
+        "tenant_id": new_user.tenant_id,
+        "role": new_user.role
     }
 
 
@@ -115,4 +121,17 @@ def login_user(
     return {
         "access_token": access_token,
         "token_type": "bearer"
+    }
+
+
+@router.get("/me")
+def get_current_user_profile(
+    current_user=Depends(get_current_user)
+):
+    return {
+        "id": current_user.id,
+        "username": current_user.username,
+        "email": current_user.email,
+        "tenant_id": current_user.tenant_id,
+        "role": current_user.role
     }
