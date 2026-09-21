@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
@@ -20,11 +20,35 @@ router = APIRouter(
 
 
 class BootstrapRequest(BaseModel):
-    tenant_name: str
-    tenant_slug: str
-    username: str
-    email: str
-    password: str
+    tenant_name: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
+
+    tenant_slug: str = Field(
+        ...,
+        min_length=2,
+        max_length=100
+    )
+
+    username: str = Field(
+        ...,
+        min_length=3,
+        max_length=100
+    )
+
+    email: str = Field(
+        ...,
+        min_length=5,
+        max_length=150
+    )
+
+    password: str = Field(
+        ...,
+        min_length=8,
+        max_length=128
+    )
 
 
 @router.post("/")
