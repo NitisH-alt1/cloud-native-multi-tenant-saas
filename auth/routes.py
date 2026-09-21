@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
+from backend.database.models import User, Tenant
+
 from auth.schemas import UserRegister, UserLogin, TokenResponse
 from auth.security import hash_password, verify_password, create_access_token
 from auth.service import get_user_by_username, create_user
@@ -18,6 +20,18 @@ def register_user(
     user: UserRegister,
     db: Session = Depends(get_db)
 ):
+    tenant = (
+        db.query(Tenant)
+        .filter(Tenant.id == user.tenant_id)
+        .first()
+    )
+
+    if tenant is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Tenant not found"
+        )
+
     existing_user = get_user_by_username(
         db,
         user.username,
