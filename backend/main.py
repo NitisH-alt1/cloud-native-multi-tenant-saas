@@ -6,6 +6,7 @@ from database import models
 from tenant.routes import router as tenant_router
 from project.routes import router as project_router
 from task.routes import router as task_router
+from auth.routes import router as auth_router
 
 
 app = FastAPI(
@@ -22,6 +23,7 @@ Base.metadata.create_all(bind=engine)
 app.include_router(tenant_router)
 app.include_router(project_router)
 app.include_router(task_router)
+app.include_router(auth_router)
 
 
 @app.get("/")
