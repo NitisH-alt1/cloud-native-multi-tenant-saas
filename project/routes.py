@@ -92,3 +92,73 @@ def get_project(
         "description": project.description,
         "tenant_id": project.tenant_id
     }
+
+
+@router.put("/{project_id}")
+def update_project(
+    project_id: int,
+    name: str,
+    description: str = None,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("admin"))
+):
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.tenant_id == current_user.tenant_id
+        )
+        .first()
+    )
+
+    if project is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found"
+        )
+
+    project.name = name
+    project.description = description
+
+    db.commit()
+    db.refresh(project)
+
+    return {
+        "message": "Project updated successfully",
+        "project": {
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "tenant_id": project.tenant_id
+        }
+    }
+
+
+@router.delete("/{project_id}")
+def delete_project(
+    project_id: int,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("admin"))
+):
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.tenant_id == current_user.tenant_id
+        )
+        .first()
+    )
+
+    if project is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found"
+        )
+
+    db.delete(project)
+    db.commit()
+
+    return {
+        "message": "Project deleted successfully",
+        "project_id": project_id
+    }
