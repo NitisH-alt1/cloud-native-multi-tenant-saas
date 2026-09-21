@@ -15,7 +15,7 @@ from auth.service import (
     get_user_by_email,
     create_user
 )
-from auth.dependencies import get_current_user
+from auth.dependencies import get_current_user, require_role
 
 
 router = APIRouter(
@@ -134,4 +134,59 @@ def get_current_user_profile(
         "email": current_user.email,
         "tenant_id": current_user.tenant_id,
         "role": current_user.role
+    }
+
+
+@router.post("/users")
+def create_tenant_user(
+    user: UserRegister,
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("admin"))
+):
+    if user.tenant_id != current_user.tenant_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot create users for another tenant"
+        )
+
+    existing_user = get_user_by_username(
+        db,
+        user.username,
+        user.tenant_id
+    )
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already exists for this tenant"
+        )
+
+    existing_email = get_user_by_email(
+        db,
+        user.email,
+        user.tenant_id
+    )
+
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists for this tenant"
+        )
+
+    password_hash = hash_password(user.password)
+
+    new_user = create_user(
+        db=db,
+        username=user.username,
+        email=user.email,
+        password_hash=password_hash,
+        tenant_id=user.tenant_id
+    )
+
+    return {
+        "message": "User created successfully",
+        "user_id": new_user.id,
+        "username": new_user.username,
+        "tenant_id": new_user.tenant_id,
+        "role": new_user.role
     }
