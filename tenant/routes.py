@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
 from backend.database.models import Tenant
-from auth.dependencies import get_current_user
+from auth.dependencies import get_current_user, require_role
 
 
 router = APIRouter(
@@ -16,7 +16,8 @@ router = APIRouter(
 def create_tenant(
     name: str,
     slug: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("admin"))
 ):
     existing_tenant = (
         db.query(Tenant)
