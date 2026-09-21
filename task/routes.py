@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from typing import Optional
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
 from backend.database.models import Task, Project
 
 from auth.dependencies import get_current_user, require_role
+from task.schemas import TaskCreate, TaskStatusUpdate
 
 
 router = APIRouter(
@@ -15,10 +14,11 @@ router = APIRouter(
 )
 
 
-class TaskCreate(BaseModel):
-    title: str
-    description: Optional[str] = None
-    project_id: int
+ALLOWED_TASK_STATUSES = {
+    "pending",
+    "in_progress",
+    "completed"
+}
 
 
 @router.get("/")
@@ -49,14 +49,14 @@ def get_tasks(
 
 @router.post("/")
 def create_task(
-    task: TaskCreate,
+    task_data: TaskCreate,
     db: Session = Depends(get_db),
     current_user=Depends(require_role("admin"))
 ):
     project = (
         db.query(Project)
         .filter(
-            Project.id == task.project_id,
+            Project.id == task_data.project_id,
             Project.tenant_id == current_user.tenant_id
         )
         .first()
@@ -69,9 +69,9 @@ def create_task(
         )
 
     new_task = Task(
-        title=task.title,
-        description=task.description,
-        project_id=task.project_id,
+        title=task_data.title,
+        description=task_data.description,
+        project_id=task_data.project_id,
         status="pending"
     )
 
@@ -125,10 +125,16 @@ def get_task(
 @router.put("/{task_id}/status")
 def update_task_status(
     task_id: int,
-    status: str,
+    status_data: TaskStatusUpdate,
     db: Session = Depends(get_db),
     current_user=Depends(require_role("admin"))
 ):
+    if status_data.status not in ALLOWED_TASK_STATUSES:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid task status"
+        )
+
     task = (
         db.query(Task)
         .join(Project, Task.project_id == Project.id)
@@ -145,7 +151,8 @@ def update_task_status(
             detail="Task not found"
         )
 
-    task.status = status
+    task.status = status_data.status
+
     db.commit()
     db.refresh(task)
 
@@ -153,6 +160,8 @@ def update_task_status(
         "message": "Task status updated successfully",
         "task": {
             "id": task.id,
-            "status": task.status
+            "title": task.title,
+            "status": task.status,
+            "project_id": task.project_id
         }
     }
