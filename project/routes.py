@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
 from backend.database.models import Project
-from auth.dependencies import get_current_user
+
+from auth.dependencies import get_current_user, require_role
 
 
 router = APIRouter(
@@ -41,7 +42,7 @@ def create_project(
     name: str,
     description: str = None,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(require_role("admin"))
 ):
     project = Project(
         name=name,
