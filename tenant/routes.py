@@ -14,23 +14,21 @@ router = APIRouter(
 
 
 @router.get("/")
-def get_current_tenant(
+def get_tenants(
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
-    tenant = (
+    tenants = (
         db.query(Tenant)
         .filter(Tenant.id == current_user.tenant_id)
-        .first()
+        .all()
     )
 
-    if tenant is None:
-        return {
-            "message": "Tenant not found"
+    return [
+        {
+            "id": tenant.id,
+            "name": tenant.name,
+            "slug": tenant.slug
         }
-
-    return {
-        "id": tenant.id,
-        "name": tenant.name,
-        "slug": tenant.slug
-    }
+        for tenant in tenants
+    ]
