@@ -18,6 +18,21 @@ def get_user_by_username(
     )
 
 
+def get_user_by_email(
+    db: Session,
+    email: str,
+    tenant_id: int
+):
+    return (
+        db.query(User)
+        .filter(
+            User.email == email,
+            User.tenant_id == tenant_id
+        )
+        .first()
+    )
+
+
 def create_user(
     db: Session,
     username: str,
