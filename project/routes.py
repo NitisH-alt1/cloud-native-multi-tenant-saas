@@ -1,4 +1,8 @@
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from backend.database.connection import get_db
+from backend.database.models import Project
 from auth.dependencies import get_current_user
 
 
@@ -10,25 +14,52 @@ router = APIRouter(
 
 @router.get("/")
 def get_projects(
+    db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    projects = (
+        db.query(Project)
+        .filter(Project.tenant_id == current_user.tenant_id)
+        .all()
+    )
+
     return {
-        "message": "Project management API is working",
         "tenant_id": current_user.tenant_id,
-        "user_id": current_user.id
+        "projects": [
+            {
+                "id": project.id,
+                "name": project.name,
+                "description": project.description
+            }
+            for project in projects
+        ]
     }
 
 
 @router.post("/")
 def create_project(
     name: str,
+    description: str = None,
+    db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    project = Project(
+        name=name,
+        description=description,
+        tenant_id=current_user.tenant_id
+    )
+
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+
     return {
         "message": "Project created successfully",
         "project": {
-            "name": name,
-            "tenant_id": current_user.tenant_id
+            "id": project.id,
+            "name": project.name,
+            "description": project.description,
+            "tenant_id": project.tenant_id
         }
     }
 
@@ -36,10 +67,26 @@ def create_project(
 @router.get("/{project_id}")
 def get_project(
     project_id: int,
+    db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+    project = (
+        db.query(Project)
+        .filter(
+            Project.id == project_id,
+            Project.tenant_id == current_user.tenant_id
+        )
+        .first()
+    )
+
+    if project is None:
+        return {
+            "message": "Project not found"
+        }
+
     return {
-        "message": "Project retrieved successfully",
-        "project_id": project_id,
-        "tenant_id": current_user.tenant_id
+        "id": project.id,
+        "name": project.name,
+        "description": project.description,
+        "tenant_id": project.tenant_id
     }
