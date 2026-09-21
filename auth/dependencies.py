@@ -1,5 +1,4 @@
-from fastapi import Depends, HTTPException, Security
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends, Header, HTTPException
 from jose import JWTError
 from sqlalchemy.orm import Session
 
@@ -8,28 +7,23 @@ from backend.database.models import User
 from auth.security import decode_access_token
 
 
-security = HTTPBearer(
-    auto_error=False
-)
-
-
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Security(security),
+    authorization: str | None = Header(default=None),
     db: Session = Depends(get_db)
 ):
-    if credentials is None:
+    if authorization is None:
         raise HTTPException(
             status_code=401,
             detail="Authorization header is required"
         )
 
-    if credentials.scheme.lower() != "bearer":
+    if not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
-            detail="Invalid authorization scheme"
+            detail="Invalid authorization header"
         )
 
-    token = credentials.credentials.strip()
+    token = authorization.split(" ", 1)[1].strip()
 
     if not token:
         raise HTTPException(
