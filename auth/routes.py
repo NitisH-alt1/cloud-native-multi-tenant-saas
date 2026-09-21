@@ -2,11 +2,15 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
-from backend.database.models import User, Tenant
+from backend.database.models import Tenant
 
 from auth.schemas import UserRegister, UserLogin, TokenResponse
 from auth.security import hash_password, verify_password, create_access_token
-from auth.service import get_user_by_username, create_user
+from auth.service import (
+    get_user_by_username,
+    get_user_by_email,
+    create_user
+)
 
 
 router = APIRouter(
@@ -42,6 +46,18 @@ def register_user(
         raise HTTPException(
             status_code=400,
             detail="Username already exists for this tenant"
+        )
+
+    existing_email = get_user_by_email(
+        db,
+        user.email,
+        user.tenant_id
+    )
+
+    if existing_email:
+        raise HTTPException(
+            status_code=400,
+            detail="Email already exists for this tenant"
         )
 
     password_hash = hash_password(user.password)
