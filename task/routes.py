@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
 from backend.database.models import Task, Project
-from auth.dependencies import get_current_user
+
+from auth.dependencies import get_current_user, require_role
 
 
 router = APIRouter(
@@ -50,7 +51,7 @@ def get_tasks(
 def create_task(
     task: TaskCreate,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(require_role("admin"))
 ):
     project = (
         db.query(Project)
@@ -126,7 +127,7 @@ def update_task_status(
     task_id: int,
     status: str,
     db: Session = Depends(get_db),
-    current_user=Depends(get_current_user)
+    current_user=Depends(require_role("admin"))
 ):
     task = (
         db.query(Task)
@@ -145,7 +146,6 @@ def update_task_status(
         )
 
     task.status = status
-
     db.commit()
     db.refresh(task)
 
