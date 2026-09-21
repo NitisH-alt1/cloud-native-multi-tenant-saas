@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.database.connection import SessionLocal
+from backend.database.connection import get_db
 from backend.database.models import Tenant
+from auth.dependencies import get_current_user
+
 
 router = APIRouter(
     prefix="/tenants",
@@ -10,23 +12,18 @@ router = APIRouter(
 )
 
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @router.post("/")
 def create_tenant(
     name: str,
     slug: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
 ):
-    existing_tenant = db.query(Tenant).filter(
-        Tenant.slug == slug
-    ).first()
+    existing_tenant = (
+        db.query(Tenant)
+        .filter(Tenant.slug == slug)
+        .first()
+    )
 
     if existing_tenant:
         raise HTTPException(
@@ -44,23 +41,34 @@ def create_tenant(
     db.refresh(tenant)
 
     return {
-        "id": tenant.id,
-        "name": tenant.name,
-        "slug": tenant.slug
-    }
-
-
-@router.get("/")
-def get_tenants(
-    db: Session = Depends(get_db)
-):
-    tenants = db.query(Tenant).all()
-
-    return [
-        {
+        "message": "Tenant created successfully",
+        "tenant": {
             "id": tenant.id,
             "name": tenant.name,
             "slug": tenant.slug
         }
-        for tenant in tenants
-    ]
+    }
+
+
+@router.get("/me")
+def get_current_tenant(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    tenant = (
+        db.query(Tenant)
+        .filter(Tenant.id == current_user.tenant_id)
+        .first()
+    )
+
+    if tenant is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Tenant not found"
+        )
+
+    return {
+        "id": tenant.id,
+        "name": tenant.name,
+        "slug": tenant.slug
+    }
