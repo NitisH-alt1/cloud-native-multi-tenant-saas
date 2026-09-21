@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
+from sqlalchemy import UniqueConstraint
 
 from backend.database.connection import Base
 
@@ -25,6 +26,19 @@ class User(Base):
     email = Column(String(150), nullable=False)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default="user", nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "username",
+            name="uq_user_tenant_username"
+        ),
+        UniqueConstraint(
+            "tenant_id",
+            "email",
+            name="uq_user_tenant_email"
+        ),
+    )
 
     tenant = relationship("Tenant", back_populates="users")
 
