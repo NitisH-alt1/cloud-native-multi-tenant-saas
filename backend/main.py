@@ -7,6 +7,7 @@ from tenant.routes import router as tenant_router
 from project.routes import router as project_router
 from task.routes import router as task_router
 from auth.routes import router as auth_router
+from auth.bootstrap import router as bootstrap_router
 
 
 app = FastAPI(
@@ -24,6 +25,7 @@ app.include_router(tenant_router)
 app.include_router(project_router)
 app.include_router(task_router)
 app.include_router(auth_router)
+app.include_router(bootstrap_router)
 
 
 @app.get("/")
