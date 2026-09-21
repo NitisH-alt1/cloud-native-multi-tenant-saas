@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
-from connection import Base
+from backend.database.connection import Base
 
 
 class Tenant(Base):
