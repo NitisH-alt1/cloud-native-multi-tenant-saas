@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
-from backend.database.models import Tenant
+from backend.database.models import Tenant, User
 
 from auth.schemas import UserRegister, UserLogin, TokenResponse
 from auth.security import (
@@ -189,4 +189,29 @@ def create_tenant_user(
         "username": new_user.username,
         "tenant_id": new_user.tenant_id,
         "role": new_user.role
+    }
+
+
+@router.get("/users")
+def get_tenant_users(
+    db: Session = Depends(get_db),
+    current_user=Depends(require_role("admin"))
+):
+    users = (
+        db.query(User)
+        .filter(User.tenant_id == current_user.tenant_id)
+        .all()
+    )
+
+    return {
+        "users": [
+            {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role,
+                "tenant_id": user.tenant_id
+            }
+            for user in users
+        ]
     }
