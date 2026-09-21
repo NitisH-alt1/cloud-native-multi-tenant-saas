@@ -11,6 +11,7 @@ class UserRegister(BaseModel):
 class UserLogin(BaseModel):
     username: str
     password: str
+    tenant_id: int
 
 
 class TokenResponse(BaseModel):
