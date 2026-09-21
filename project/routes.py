@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.database.connection import get_db
@@ -24,12 +24,12 @@ def get_projects(
     )
 
     return {
-        "tenant_id": current_user.tenant_id,
         "projects": [
             {
                 "id": project.id,
                 "name": project.name,
-                "description": project.description
+                "description": project.description,
+                "tenant_id": project.tenant_id
             }
             for project in projects
         ]
@@ -80,9 +80,10 @@ def get_project(
     )
 
     if project is None:
-        return {
-            "message": "Project not found"
-        }
+        raise HTTPException(
+            status_code=404,
+            detail="Project not found"
+        )
 
     return {
         "id": project.id,
